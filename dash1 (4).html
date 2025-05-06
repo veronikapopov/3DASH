@@ -1,0 +1,503 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="דשבורד 1 של DecisionSync Analytics - ניתוח מגמות מכירות עם ויזואליזציות אינטראקטיביות מבית ורוניקה פופוב">
+  <meta name="keywords" content="מגמות מכירות, ויזואליזציה, אנליטיקה, דשבורד, DecisionSync">
+  <title>דשבורד 1 - מגמות מכירות 📊</title>
+  <script src="https://cdn.tailwindcss.com" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Alef:wght@400;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Alef', sans-serif;
+      background: linear-gradient(135deg, #1e3a8a, #7e22ce);
+      background-size: 400% 400%;
+      animation: gradientFlow 20s ease infinite;
+      color: #F3F4F6;
+      margin: 0;
+      padding: 0;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+    @keyframes gradientFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .navbar {
+      background: linear-gradient(90deg, rgba(30, 58, 138, 0.9), rgba(126, 34, 206, 0.9));
+      backdrop-filter: blur(15px);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      padding: 1rem 2rem;
+    }
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+    .nav-links a {
+      color: #F3F4F6;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      transition: all 0.3s;
+      position: relative;
+    }
+    .nav-links a:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: #60A5FA;
+      transition: width 0.3s;
+    }
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 0.3rem;
+      cursor: pointer;
+    }
+    .hamburger span {
+      width: 30px;
+      height: 4px;
+      background: #F3F4F6;
+      border-radius: 2px;
+      transition: all 0.3s;
+    }
+    .hero {
+      position: relative;
+      height: 60vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2070&auto=format&fit=crop');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(20px);
+      border-radius: 1.5rem;
+      padding: 2.5rem;
+      transition: all 0.4s;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, rgba(96, 165, 250, 0.1), rgba(192, 132, 252, 0.1));
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .card:hover::before {
+      opacity: 1;
+    }
+    .button {
+      background: linear-gradient(45deg, #3B82F6, #A78BFA);
+      padding: 1rem 2rem;
+      border-radius: 3rem;
+      color: white;
+      font-weight: 600;
+      font-family: 'Poppins', sans-serif;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    .button:hover {
+      background: linear-gradient(45deg, #2563EB, #8B5CF6);
+      transform: scale(1.1) rotate(2deg);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+    .tooltip {
+      position: relative;
+    }
+    .tooltip:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1F2937;
+      color: #F3F4F6;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      z-index: 10;
+    }
+    .tableau-container {
+      position: relative;
+      width: 100%;
+      min-height: 800px;
+    }
+    .loading-spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(255, 255, 255, 0.3);
+      border-top: 5px solid #60A5FA;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      display: none;
+    }
+    .loading .loading-spinner {
+      display: block;
+    }
+    .error-message {
+      display: none;
+      color: #F87171;
+      text-align: center;
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+    .error .error-message {
+      display: block;
+    }
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    .scroll-top {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: #60A5FA;
+      color: white;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+    .scroll-top.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .scroll-top:hover {
+      transform: translateY(-5px);
+    }
+    .sidebar {
+      position: sticky;
+      top: 100px;
+      height: fit-content;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .sidebar a {
+      display: block;
+      padding: 0.75rem 1rem;
+      color: #D1D5DB;
+      transition: all 0.3s;
+    }
+    .sidebar a:hover {
+      color: #60A5FA;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 0.5rem;
+    }
+    footer {
+      background: linear-gradient(90deg, #1e3a8a, #4b0082);
+      padding: 3rem 2rem;
+      text-align: center;
+      color: #D1D5DB;
+    }
+    .social-icons a {
+      color: #F3F4F6;
+      margin: 0 1rem;
+      transition: all 0.3s;
+    }
+    .social-icons a:hover {
+      color: #A78BFA;
+      transform: scale(1.2);
+    }
+    .theme-toggle {
+      cursor: pointer;
+      padding: 0.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+    }
+    .theme-toggle:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .dark-mode {
+      background: linear-gradient(135deg, #111827, #4b5563);
+      animation: none;
+    }
+    .dark-mode .hero {
+      background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2070&auto=format&fit=crop');
+    }
+    .dark-mode .navbar {
+      background: linear-gradient(90deg, rgba(17, 24, 39, 0.9), rgba(75, 85, 99, 0.9));
+    }
+    .dark-mode footer {
+      background: linear-gradient(90deg, #111827, #374151);
+    }
+    @media (min-width: 1024px) {
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 3fr;
+        gap: 2rem;
+      }
+    }
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 70px;
+        right: 0;
+        background: rgba(30, 58, 138, 0.95);
+        width: 100%;
+        padding: 1.5rem;
+        border-radius: 0 0 1rem 1rem;
+      }
+      .nav-links.active {
+        display: flex;
+      }
+      .hamburger {
+        display: flex;
+      }
+      .hero {
+        height: 50vh;
+      }
+      .sidebar {
+        position: static;
+        margin-bottom: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-white">DecisionSync Analytics 🚀</h1>
+    <div class="flex items-center gap-4">
+      <div class="theme-toggle" onclick="toggleTheme()" aria-label="החלף ערכת נושא">
+        <i class="fas fa-moon text-xl"></i>
+      </div>
+      <div class="hamburger" aria-label="פתח תפריט">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="tooltip" data-tooltip="חזור הביתה! 🏠">דף הבית</a>
+      <a href="dash1.html" class="tooltip" data-tooltip="מכירות זה כאן! 📊">דשבורד 1</a>
+      <a href="dash2.html" class="tooltip" data-tooltip="תמחור חכם! 💸">דשבורד 2</a>
+      <a href="dash3.html" class="tooltip" data-tooltip="הצצה לעתיד! 🔮">דשבורד 3</a>
+      <a href="#about" class="tooltip" data-tooltip="מי זו ורוניקה? 🌟">אודות ורוניקה</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <h1 class="text-5xl md:text-6xl font-bold mb-4">מגמות מכירות 📊✨</h1>
+      <p class="text-xl md:text-2xl mb-6 font-family: 'Poppins', sans-serif;">צללו לתוך נתוני המכירות שלכם – זה כל כך מרתק, שתשכחו מהקפה שלכם! ☕</p>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-12">
+    <section class="dashboard-grid">
+      <div class="sidebar">
+        <h3 class="text-xl font-semibold text-teal-300 mb-4">ניווט מהיר ⚡</h3>
+        <a href="index.html" class="tooltip" data-tooltip="חזור להתחלה! 🏠">דף הבית</a>
+        <a href="dash1.html" class="tooltip" data-tooltip="אתה כבר כאן! 😎">דשבורד 1</a>
+        <a href="dash2.html" class="tooltip" data-tooltip="תמחור זה הכל! 💸">דשבורד 2</a>
+        <a href="dash3.html" class="tooltip" data-tooltip="העתיד קורא! 🔮">דשבורד 3</a>
+        <a href="#contact" class="tooltip" data-tooltip="ספר לנו הכל! 📬">צור קשר</a>
+      </div>
+      <div>
+        <div class="card mb-8">
+          <h2 class="text-3xl font-semibold text-teal-300 mb-4">מה תגלו כאן? 🤔</h2>
+          <p class="text-lg mb-4">
+            דשבורד 1 הוא כמו מפת אוצר למכירות שלכם! 🗺️ הוא מנתח נתונים לפי קטגוריות מוצרים, אזורים גיאוגרפיים ותקופות זמן, ומאפשר לכם לזהות דפוסים עונתיים, מוצרים מובילים ותחומים לשיפור. הגרפים האינטראקטיביים כל כך חכמים, שהם כמעט יכולים לנהל את העסק שלכם! 😎
+          </p>
+          <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=500&auto=format&fit=crop" alt="גרף מכירות" class="w-full rounded-lg shadow-lg mb-4" loading="lazy">
+          <p class="text-sm text-gray-400">קרדיט תמונה: Unsplash</p>
+          <a href="index.html" class="button mt-4 inline-block tooltip" data-tooltip="חזור להתחלה! 🏠">חזרה לדף הראשי</a>
+        </div>
+        <div class="card tableau-container loading">
+          <h2 class="text-3xl font-semibold text-teal-300 mb-4">הוויזואליזציה שלכם 📈</h2>
+          <p class="text-lg mb-4">התכוננו להתאהב בנתונים שלכם – הם נראים טוב יותר מאי פעם! 👇</p>
+          <div class="loading-spinner"></div>
+          <p class="error-message">אופס! משהו השתבש בטעינת הוויזואליזציה. נסו שוב או צרו קשר! 📬</p>
+          <script type="module" src="https://public.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js" async></script>
+          <tableau-viz 
+            id="tableauViz"
+            src="https://public.tableau.com/views/DASHBOARD1_17463986045630/Dashboard1?:language=en-US&:embed=y&:display_count=n&:origin=viz_share_link"
+            toolbar="bottom"
+            hide-tabs
+            width="100%"
+            height="800"
+            role="img"
+            aria-label="ויזואליזציה של מגמות מכירות">
+          </tableau-viz>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p class="text-lg mb-4">© 2025 DecisionSync Analytics – נתונים היום, הצלחה מחר! 😎</p>
+    <div class="social-icons mb-4">
+      <a href="#" aria-label="פייסבוק" title="עקבו אחרינו בפייסבוק"><i class="fab fa-facebook-f text-2xl"></i></a>
+      <a href="#" aria-label="טוויטר" title="צייצו איתנו בטוויטר"><i class="fab fa-twitter text-2xl"></i></a>
+      <a href="#" aria-label="לינקדאין" title="הצטרפו אלינו בלינקדאין"><i class="fab fa-linkedin-in text-2xl"></i></a>
+    </div>
+    <p class="text-sm">פותח עם ❤️ על ידי ורוניקה פופוב</p>
+  </footer>
+
+  <div class="scroll-top" aria-label="חזור למעלה">
+    <i class="fas fa-rocket text-xl"></i>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Hamburger menu toggle
+      const hamburger = document.querySelector('.hamburger');
+      const navLinks = document.querySelector('.nav-links');
+      hamburger.addEventListener('click', () => {
+        navLinks.classList.toggle('active');
+        hamburger.querySelectorAll('span').forEach(span => {
+          span.classList.toggle('transform');
+        });
+      });
+
+      // Theme toggle
+      function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        const icon = document.querySelector('.theme-toggle i');
+        icon.classList.toggle('fa-moon');
+        icon.classList.toggle('fa-sun');
+      }
+
+      // GSAP animations
+      gsap.from('.hero h1', { opacity: 0, y: 50, duration: 1, delay: 0.2 });
+      gsap.from('.hero p', { opacity: 0, y: 30, duration: 1, delay: 0.4 });
+      gsap.from('.card', { opacity: 0, y: 50, duration: 1, stagger: 0.2, delay: 0.6 });
+      gsap.from('.sidebar a', { opacity: 0, x: -30, duration: 0.5, stagger: 0.1, delay: 0.8 });
+
+      // Tableau loading and error handling
+      const tableauContainer = document.querySelector('.tableau-container');
+      const tableauViz = document.querySelector('tableau-viz');
+      let timeout = setTimeout(() => {
+        tableauContainer.classList.add('error');
+        tableauContainer.classList.remove('loading');
+      }, 10000); // 10-second timeout
+      tableauViz.addEventListener('firstinteractive', () => {
+        clearTimeout(timeout);
+        tableauContainer.classList.remove('loading');
+      });
+
+      // Scroll-triggered animations
+      gsap.utils.toArray('.card').forEach(card => {
+        gsap.from(card, {
+          opacity: 0,
+          y: 50,
+          duration: 1,
+          scrollTrigger: {
+            trigger: card,
+            start: 'top 80%',
+            end: 'bottom 20%',
+            toggleActions: 'play none none reverse',
+          },
+        });
+      });
+
+      // Scroll-to-top button
+      const scrollTop = document.querySelector('.scroll-top');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 300) {
+          scrollTop.classList.add('visible');
+        } else {
+          scrollTop.classList.remove('visible');
+        }
+      });
+      scrollTop.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      // Smooth scrolling for anchor links
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', (e) => {
+          e.preventDefault();
+          document.querySelector(anchor.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+        });
+      });
+    });
+  </script>
+</body>
+</html>
